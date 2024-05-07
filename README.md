@@ -5,13 +5,13 @@ With Twilio's [Conversations API](https://www.twilio.com/docs/conversations/usin
 Before moving forward, you are going to need the following, which may take some time to be approved if you don't already have them:
 - A WhatsApp Business Profile - [you can request access here](https://www.twilio.com/whatsapp/request-access)
 - A WhatsApp Sender for your Business Profile - [request access here](https://www.twilio.com/console/sms/whatsapp/senders)
-- A WhatsApp [Message Template](https://www.twilio.com/docs/whatsapp/tutorial/send-whatsapp-notification-messages-templates) for initiating the conversation - [create one here](https://www.twilio.com/console/sms/whatsapp/templates)
+- A WhatsApp [Content Template](https://www.twilio.com/docs/content/send-templates-created-with-the-content-template-builder#send-messages-with-a-messaging-service-in-the-from-field) for initiating the conversation - [create a Quick reply template here](https://console.twilio.com/us1/develop/sms/content-template-builder/template/create).
 You will have to wait for these to be approved before you are able to write code for WhatsApp with the Conversations API.
 
 Once that's taken care of, you can begin setting up your project. These code samples are all built to run within the Twilio Ecosystem using [Twilio Functions](https://www.twilio.com/docs/runtime/functions) and [Twilio Sync](https://www.twilio.com/docs/sync).
 ## Configuration
 ### Creating the Functions
-Create a [Twilio Functions Service](https://www.twilio.com/console/functions/overview/services), and then add three functions, one for each `.js` file in the `Functions` folder of this repository. Make sure the privacy for the Function corresponding to `createConversation,js` is set to "Public", and the other two are "Protected".
+Create a [Twilio Functions Service](https://www.twilio.com/console/functions/overview/services), and then add three functions, one for each `.js` file in the `Functions` folder of this repository. Make sure the privacy for the Function corresponding to `createConversation.js` is set to "Public", and the other two are "Protected".
 
 ### Replacing placeholder code for phone numbers
 After copying/pasting the code for these Functions, you are going to want to change the values inside the `numbers` array to the WhatsApp numbers of the users you want to add to the Conversation. As these code samples are a proof of concept to get you up and running, the values for your users' phone numbers are going to be hard-coded for now. You can change this to fit your needs depending on where your users' phone numbers are stored.
@@ -35,7 +35,7 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 
-client.sync.services.create().then(service => console.log(service.sid));
+client.sync.v1.services.create().then(service => console.log(service.sid));
 ```
 Make sure you save this SID to be used as an environment variable.
 
@@ -50,15 +50,20 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 
-client.sync.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-          .syncMaps
-          .create()
-          .then(sync_map => console.log(sync_map.sid));
+client.sync.v1.services('ISXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+         .syncMaps
+         .create()
+         .then(sync_map => console.log(sync_map.sid));
 ```
 Save this SID as well to be used as an environment variable.
 
 ### Environment Variables
-Make sure the environment variables in your Functions Service are set correctly. `SYNC_MAP_SID` should be the SID for the Sync Map you created, `TWILIO_SERVICE_SID` should be the SID for your Twilio Sync Service, and `WHATSAPP_NUMBER` should correspond to the phone number for your WhatsApp Sender.
+Make sure the environment variables in your Functions Service are set correctly:</br>
+`SYNC_MAP_SID` - SID for the Sync Map you created.</br>
+`TWILIO_SERVICE_SID` - SID for your Twilio Sync Service.</br>
+`WHATSAPP_NUMBER` - Phone number for your WhatsApp Sender.</br>
+`MESSAGE_SERVICE_SID` - SID of your Messaging Service.</br>
+`CONTENT_SID` - SID of your Content Template.
 
 ## Running the Code
 When you are finally ready to run the code and initiate WhatsApp group messaging, copy the URL for your Function for `createConversation.js` and visit it in your web browser to run the code. It should start a Conversation, add each of the phone numbers you entered as participants in the Conversation, and send an initial message to each of them of the template that you created. 

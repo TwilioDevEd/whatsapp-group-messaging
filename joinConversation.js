@@ -1,29 +1,34 @@
 exports.handler = async function(context, event, callback) {
   const client = context.getTwilioClient();
 
-  let participant = await client.sync.services(process.env.TWILIO_SERVICE_SID)
-    .syncMaps(process.env.SYNC_MAP_SID)
+  let participant = await client.sync.v1.services(context.TWILIO_SERVICE_SID)
+    .syncMaps(context.SYNC_MAP_SID)
     .syncMapItems(event.From)
     .fetch()
     .catch(e => null);
 
-  if (!participant) {
-    subscriber = await client.sync.services(process.env.TWILIO_SERVICE_SID)
-      .syncMaps(process.env.SYNC_MAP_SID)
-      .syncMapItems
-      .create({ key: event.From, data: { name: event.ProfileName } });
-  } else if (participant.data.name !== event.ProfileName) {
-    subscriber = await client.sync.services(process.env.TWILIO_SERVICE_SID)
-      .syncMaps(process.env.SYNC_MAP_SID)
+  if (participant && participant.data.name !== event.ProfileName) {
+    await client.sync.v1.services(context.TWILIO_SERVICE_SID)
+      .syncMaps(context.SYNC_MAP_SID)
       .syncMapItems(event.From)
       .update({ data: { name: event.ProfileName } });
   }
+  
+  if(!participant && event.Body === 'Join the group chat') {
 
-  if(event.Body === 'Join the group chat') {
-    let twiml = new Twilio.twiml.MessagingResponse();
-    twiml.message(`Welcome to the conversation, ${event.ProfileName}!`);
+    await client.conversations.v1.conversations(context.CONVERSATION_SID).participants.create({
+      'messagingBinding.address': event.From,
+      'messagingBinding.proxyAddress': `whatsapp:${context.WHATSAPP_NUMBER}`
+    }).catch(e => null)
 
-    return callback(null, twiml);
+    await client.sync.v1.services(context.TWILIO_SERVICE_SID)
+    .syncMaps(context.SYNC_MAP_SID)
+    .syncMapItems
+    .create({ key: event.From, data: { name: event.ProfileName } });
+
+    await client.conversations.v1.conversations(context.CONVERSATION_SID)
+                       .messages
+                       .create({author: 'system', body: `${event.ProfileName} joined the group`})
   }
 
   return callback(null);

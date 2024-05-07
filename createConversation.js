@@ -2,21 +2,21 @@ exports.handler = async function(context, event, callback) {
   const numbers = ['YOUR_PHONE_NUMBER', 'YOUR_FRIENDS_PHONE_NUMBER']
   const client = context.getTwilioClient();
 
-  const conversation = await client.conversations.conversations.create();
+  const conversation = await client.conversations.v1.conversations.create();
 
-  numbers.forEach(async (number) => {
+  await client.serverless.v1.services(context.SERVICE_SID)
+    .environments(context.ENVIRONMENT_SID)
+    .variables
+    .create({key: 'CONVERSATION_SID', value: conversation.sid})
 
-    const newParticipant = await client.conversations.conversations(conversation.sid).participants.create({
-      'messagingBinding.address': `whatsapp:${number}`,
-      'messagingBinding.proxyAddress': `whatsapp:${process.env.WHATSAPP_NUMBER}`
-    });
-
-    const message = await client.messages.create({
-      'to': `whatsapp:${number}`,
-      'from': `whatsapp:${process.env.WHATSAPP_NUMBER}`,
-      'body': ' Sam has invited you to join a group conversation. *Please tap the button below to confirm your participation.*'
-    });
-  });
+  for (const number of numbers) {
+    await client.messages
+      .create({
+         contentSid: context.CONTENT_SID,
+         from: context.MESSAGE_SERVICE_SID,
+         to: `whatsapp:${number}`
+       })
+  }
 
   return callback(null, conversation.sid);
 };
